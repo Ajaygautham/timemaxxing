@@ -9,7 +9,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Supabase JS Client -->
+    <!-- Supabase JS Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script>
@@ -98,7 +98,7 @@
             <div id="empty-state" class="hidden text-center py-12">
                 <div class="w-12 h-12 rounded-full bg-zinc-800/60 text-zinc-500 flex items-center justify-center mx-auto mb-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 022 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                     </svg>
                 </div>
                 <p class="text-sm font-medium text-zinc-300">No tasks found</p>
@@ -109,11 +109,12 @@
     </main>
 
     <script>
-        // Set your Supabase credentials here
+        // Supabase configuration
         const SUPABASE_URL = 'https://bpugckrdtegogymsvkbs.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwdWdja3JkdGVnb2d5bXN2a2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NTQ4NzAsImV4cCI6MjEwNjQzMDg3MH0.aYJaw1uron7nkP9mfOYLEOqen_eRSm_c24HLTeq7h4A';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Use supabaseClient to prevent name collision with window.supabase
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         document.addEventListener('DOMContentLoaded', () => {
             const todoForm = document.getElementById('todo-form');
@@ -129,7 +130,7 @@
 
             // Fetch tasks from Supabase database
             async function fetchTasks() {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('todos')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -200,7 +201,7 @@
                 );
             }
 
-            // Add new task to Supabase
+            // Add new task
             todoForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const text = todoInput.value.trim();
@@ -208,7 +209,7 @@
 
                 todoInput.value = '';
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('todos')
                     .insert([{ text, completed: false }])
                     .select();
@@ -221,7 +222,7 @@
                 }
             });
 
-            // Toggle checkbox or delete item via delegation
+            // Toggle checkbox or delete item via event delegation
             todoList.addEventListener('click', async (e) => {
                 const checkbox = e.target.closest('.task-checkbox');
                 const deleteBtn = e.target.closest('.delete-btn');
@@ -234,7 +235,7 @@
                         task.completed = newStatus;
                         updateUI();
 
-                        const { error } = await supabase
+                        const { error } = await supabaseClient
                             .from('todos')
                             .update({ completed: newStatus })
                             .eq('id', id);
@@ -252,7 +253,7 @@
                     tasks = tasks.filter(t => t.id !== id);
                     updateUI();
 
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('todos')
                         .delete()
                         .eq('id', id);
@@ -278,7 +279,7 @@
                 });
             });
 
-            // Clear completed tasks in database
+            // Clear completed tasks
             clearCompletedBtn.addEventListener('click', async () => {
                 const completedIds = tasks.filter(t => t.completed).map(t => t.id);
                 if (completedIds.length === 0) return;
@@ -286,7 +287,7 @@
                 tasks = tasks.filter(t => !t.completed);
                 updateUI();
 
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('todos')
                     .delete()
                     .in('id', completedIds);
